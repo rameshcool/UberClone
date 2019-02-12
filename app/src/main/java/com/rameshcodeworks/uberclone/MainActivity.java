@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 @Override
                                 public void done(ParseException e) {
                                     transitionToPassengerActivity();
+                                    transitionToDriverRequestListActivity();
                                 }
                             });
                         }
@@ -70,7 +71,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ParseInstallation.getCurrentInstallation().saveInBackground();
 
         if (ParseUser.getCurrentUser() != null) {
-            ParseUser.logOut();
+           // ParseUser.logOut();
+            transitionToPassengerActivity();
+            transitionToDriverRequestListActivity();
         }
 
         btnSignUpLogin = findViewById(R.id.btnSignUpLogin);
@@ -112,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                                 Toast.makeText(MainActivity.this, "Signed Up!", Toast.LENGTH_SHORT).show();
                                 transitionToPassengerActivity();
+                                transitionToDriverRequestListActivity();
                             }
                         }
                     });
@@ -123,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             if (user != null && e == null) {
                                 Toast.makeText(MainActivity.this, "User Logged In " + user.get("as"), Toast.LENGTH_SHORT).show();
                                 transitionToPassengerActivity();
+                                transitionToDriverRequestListActivity();
                             }
                         }
                     });
@@ -169,6 +174,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (ParseUser.getCurrentUser().get("as").equals("Passenger")) {
 
                 Intent intent = new Intent(MainActivity.this, PassengerActivity.class);
+                startActivity(intent);
+            }
+        }
+    }
+
+    private void transitionToDriverRequestListActivity() {
+
+        if (ParseUser.getCurrentUser() != null) {
+
+            if (ParseUser.getCurrentUser().get("as").equals("Driver")) {
+
+                Intent intent = new Intent(this, DriverRequestListActivity.class);
                 startActivity(intent);
             }
         }
