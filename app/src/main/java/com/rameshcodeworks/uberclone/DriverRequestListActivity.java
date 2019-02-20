@@ -1,6 +1,7 @@
 package com.rameshcodeworks.uberclone;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,6 +15,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -30,7 +32,7 @@ import com.parse.ParseUser;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DriverRequestListActivity extends AppCompatActivity implements View.OnClickListener {
+public class DriverRequestListActivity extends AppCompatActivity implements View.OnClickListener, AdapterView.OnItemClickListener {
 
     private Button btnGetRequests;
     private LocationManager locationManager;
@@ -39,6 +41,9 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
     private ListView listView;
     private ArrayList<String> nearByDriveRequests;
     private ArrayAdapter adapter;
+    private ArrayList<Double> passengersLatitudes;
+    private ArrayList<Double> passengersLongitudes;
+    private ArrayList<String> requestcarUsernames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +54,11 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
         btnGetRequests.setOnClickListener(this);
 
         listView = findViewById(R.id.requestListView);
+
         nearByDriveRequests = new ArrayList<>();
+        passengersLatitudes = new ArrayList<>();
+        passengersLongitudes = new ArrayList<>();
+        requestcarUsernames = new ArrayList<>();
         adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, nearByDriveRequests);
 
         listView.setAdapter(adapter);
@@ -62,7 +71,8 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
 
             initializeLocationListener();
         }
-        //listView.setOnItemClickListener(this);
+
+        listView.setOnItemClickListener(this);
     }
 
     @Override
@@ -126,7 +136,7 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
 
             ParseQuery<ParseObject> requestCarQuery = ParseQuery.getQuery("RequestCar");
             requestCarQuery.whereNear("passengerLocation", driverCurrentLocation);
-            //requestCarQuery.whereDoesNotExist("driverOfMe");
+            requestCarQuery.whereDoesNotExist("driverOfMe");
             requestCarQuery.findInBackground(new FindCallback<ParseObject>() {
                 @Override
                 public void done(List<ParseObject> objects, ParseException e) {
@@ -134,6 +144,19 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
                     if (e == null) {
 
                         if (objects.size() > 0) {
+
+                            if (nearByDriveRequests.size() > 0) {
+                                nearByDriveRequests.clear();
+                            }
+                            if (passengersLatitudes.size() > 0) {
+                                passengersLatitudes.clear();
+                            }
+                            if (passengersLongitudes.size() > 0) {
+                                passengersLongitudes.clear();
+                            }
+                            if (requestcarUsernames.size() > 0) {
+                                requestcarUsernames.clear();
+                            }
 
                             for (ParseObject nearRequest : objects) {
 
@@ -147,6 +170,10 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
                                 float roundedDistanceValue = Math.round(milesDistanceToPassenger * 10) / 10;
 
                                 nearByDriveRequests.add("There are " + roundedDistanceValue + " miles to " + nearRequest.get("username"));
+
+                                passengersLatitudes.add(pLocation.getLatitude());
+                                passengersLongitudes.add(pLocation.getLongitude());
+                                requestcarUsernames.add(nearRequest.get("username") + "");
                             }
                         } else {
                             Toast.makeText(DriverRequestListActivity.this, "Sorry...There are no request yet", Toast.LENGTH_LONG).show();
@@ -203,5 +230,29 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
 
             }
         };
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+       // Toast.makeText(this, "Clicked!!!", Toast.LENGTH_LONG).show();
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            Location cdLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+            if (cdLocation != null) {
+
+                Intent intent = new Intent(this, ViewLocationsMapActivity.class);
+                intent.putExtra("dLatitude", cdLocation.getLatitude());
+                intent.putExtra("dLongitude", cdLocation.getLongitude());
+                intent.putExtra("pLatitude", passengersLatitudes.get(position));
+                intent.putExtra("pLongitude", passengersLongitudes.get(position));
+
+                intent.putExtra("rUsername", requestcarUsernames.get(position));
+                startActivity(intent);
+            }
+        }
+
     }
 }
