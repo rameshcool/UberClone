@@ -28,6 +28,7 @@ import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.parse.SaveCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -132,6 +133,8 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
 
         if (driverLocation != null) {
 
+            saveDriverLocationToParse(driverLocation);
+
             final ParseGeoPoint driverCurrentLocation = new ParseGeoPoint(driverLocation.getLatitude(), driverLocation.getLongitude());
 
             ParseQuery<ParseObject> requestCarQuery = ParseQuery.getQuery("RequestCar");
@@ -196,40 +199,13 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
 
             if (ContextCompat.checkSelfPermission(DriverRequestListActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
+                initializeLocationListener();
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
 
                 Location currentDriverLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                 updateRequestsListView(currentDriverLocation);
             }
         }
-    }
-
-    private void initializeLocationListener() {
-
-        locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
-
-
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
     }
 
     @Override
@@ -253,6 +229,49 @@ public class DriverRequestListActivity extends AppCompatActivity implements View
                 startActivity(intent);
             }
         }
+    }
 
+    private void initializeLocationListener() {
+
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+    }
+
+    private void saveDriverLocationToParse(Location location) {
+
+        ParseUser driver = ParseUser.getCurrentUser();
+        ParseGeoPoint driverLocation = new ParseGeoPoint(location.getLatitude(), location.getLongitude());
+        driver.put("driverLocation", driverLocation);
+        driver.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+
+                if (e == null) {
+
+                    Toast.makeText(DriverRequestListActivity.this, "Location Saved!!!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 }
